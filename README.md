@@ -8,11 +8,22 @@ What exists on this branch:
 
 - project skeleton: a [uv](https://docs.astral.sh/uv/) project (`pyproject.toml`, `uv.lock`, Python 3.11+), the package `lbo` with its version number, MIT license
 - CI on GitHub Actions for Python 3.11 and 3.12: ruff lint, ruff format check, pytest
-- one smoke test that the package can be imported
+- deal assumptions in one YAML file (`config/example.yaml`, a fictional company), validated with pydantic
+- the core LBO engine (`src/lbo/`): sources & uses, operating projection, cash flow waterfall and debt schedule with cash sweep, exit returns (IRR, MOIC), value creation bridge, entry x exit multiple sensitivity
+- pytest suite: a two-year deal calculated by hand, config validation, model invariants
+
+There is no command line interface or Excel export on this branch yet. The engine can be used from Python:
+
+```python
+from lbo.config import load_config
+from lbo.model import run_model
+
+result = run_model(load_config("config/example.yaml"))
+print(result.base.returns.moic, result.base.returns.irr)
+```
 
 Planned, in integration order:
 
-- [ ] validated YAML deal assumptions and the core LBO engine: sources & uses, operating projection, cash flow waterfall and debt schedule with cash sweep, exit returns (IRR, MOIC), value creation bridge, entry x exit multiple sensitivity
 - [ ] formatted Excel workbook export
 - [ ] command line interface (`python -m lbo run config/example.yaml`)
 - [ ] full README with method, example output, example workbook and limitations
