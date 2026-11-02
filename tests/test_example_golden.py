@@ -3,7 +3,10 @@
 The README publishes these headline numbers. If a change to the engine moves
 any of them, this test fails, and the README example output must be
 regenerated (uv run python -m lbo run config/example.yaml) before committing.
-The values were cross-checked by an independent from-scratch calculation.
+The values were cross-checked against a separate from-scratch calculation
+(textbook formulas, no import of this package) that is not part of this
+repository. The hand calculations that are included live in
+tests/test_hand_case.py and tests/test_tax_loss_case.py.
 """
 
 from __future__ import annotations
