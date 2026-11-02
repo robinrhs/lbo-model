@@ -328,12 +328,14 @@ The finance logic (`transaction`, `projection`, `debt`, `returns`, `bridge`) is 
 `uv run pytest` checks, among other things:
 
 - a two-year deal calculated by hand line by line (see the docstring in `tests/test_hand_case.py`)
+- a second hand-calculated deal with a tax-loss year (taxes floored at zero, no loss carry-forward; `tests/test_tax_loss_case.py`)
 - sources equal uses
 - debt is never negative, balances roll forward, the sweep respects seniority
 - cash reconciles every year (beginning cash + levered FCF - repayments = ending cash)
-- IRR matches `numpy_financial.irr`
-- a wiped-out deal returns MOIC 0.00x and IRR -100% (exit equity floored at zero)
+- IRR matches `numpy_financial.irr`, including IRRs below -99% and above 1000%
+- a wiped-out deal returns MOIC 0.00x and IRR -100% (exit equity floored at zero), and its workbook shows the lenders' shortfall and the limited-liability bridge row
 - the example-case headline numbers shown above (golden regression test)
+- invalid inputs are rejected with the field name: typos, wrong types, NaN and infinity
 - bridge components sum to the total equity gain
 - the centre cell of the sensitivity grid equals the base-case IRR
 
