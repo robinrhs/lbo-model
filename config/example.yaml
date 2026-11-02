@@ -1,0 +1,48 @@
+# Example LBO assumptions for a generic (fictional) European mid-market company.
+# The numbers are illustrative, in the range of a typical sponsor-backed deal,
+# and are not taken from any real transaction.
+#
+# Units: money in EUR millions; rates as decimals (0.07 = 7%); multiples as x.
+
+company:
+  name: Generic Mid-Market Co.
+  currency: EUR
+
+entry:
+  ltm_revenue: 250.0            # last-twelve-months revenue at closing
+  ltm_ebitda: 40.0              # LTM EBITDA -> 16.0% margin
+  entry_multiple: 10.0          # EV / LTM EBITDA paid -> EV = 400
+  transaction_fees_pct_ev: 0.025  # advisory, legal, DD and financing fees
+  minimum_cash: 10.0            # operating cash funded at closing (cash-free / debt-free deal)
+
+operations:
+  revenue_growth: [0.06, 0.055, 0.05, 0.045, 0.04]   # one value per year
+  ebitda_margin: [0.165, 0.17, 0.175, 0.18, 0.18]    # modest margin expansion
+  da_pct_revenue: 0.030         # depreciation & amortisation
+  capex_pct_revenue: 0.035      # maintenance + growth capex
+  nwc_pct_revenue_change: 0.12  # NWC investment per EUR of additional revenue
+  tax_rate: 0.30                # roughly the German corporate + trade tax rate
+
+exit:
+  holding_period_years: 5
+  exit_multiple: 10.0           # base case: exit at the entry multiple (no expansion)
+
+debt:
+  # Listed from most to least senior; the cash sweep follows this order.
+  tranches:
+    - name: Senior Term Loan
+      amount_x_ebitda: 3.0
+      interest_rate: 0.070
+      mandatory_amortization_pct: 0.05   # 5% of original principal per year
+      sweep: true
+    - name: Subordinated Notes
+      amount_x_ebitda: 1.5
+      interest_rate: 0.105
+      mandatory_amortization_pct: 0.0    # bullet repayment at maturity
+      sweep: false                       # non-call during the holding period
+  cash_sweep_pct: 0.50          # 50% of excess cash prepays senior debt
+
+sensitivity:
+  entry_multiple_step: 0.5
+  exit_multiple_step: 0.5
+  steps: 2                      # 5 x 5 grid centred on the base case
