@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+
+# Virtual environments
+.venv/
+venv/
+
+# Tool caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Model outputs (generated Excel workbooks etc.)
+output/
+*.xlsx
+!docs/*.xlsx
+~$*.xlsx
+
+# Secrets / local config
+.env
+.env.*
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
