@@ -179,8 +179,7 @@ IRR sensitivity: entry multiple (rows) x exit multiple
 `--excel` writes one sheet per schedule: **Assumptions, Sources & Uses, Projection, Debt Schedule, Returns, Bridge, Sensitivity**. Inputs are in blue font, calculations in black, negatives in brackets, multiples as `x`; header rows and the label column are frozen. A generated copy for the example case is in [`docs/example_output.xlsx`](docs/example_output.xlsx).
 
 <!-- TODO screenshot: replace with a real Microsoft Excel screenshot of the Debt Schedule sheet (docs/images/excel_debt_schedule.png) -->
-
-The previews below are macOS Quick Look renderings of the exported sheets (generated headlessly, so fonts and the decimal separator follow the local system settings rather than Excel):
+> **Screenshot to come:** a screenshot of the workbook opened in Microsoft Excel will be added here. Until then, the previews below are macOS Quick Look renderings of the exported sheets (generated headlessly, so fonts and the decimal separator follow the local system settings rather than Excel):
 
 <p>
   <img src="docs/images/debt_schedule_preview.png" alt="Debt Schedule sheet preview" width="49%">
@@ -239,12 +238,14 @@ Cash_t            = Cash_{t-1} + Levered FCF_t - sum_i (Mandatory_{i,t} + Sweep_
 
 ```
 Exit EV        = EBITDA_N x exit multiple
-Exit equity    = Exit EV - (Debt_N - Cash_N)
+Exit equity    = max(0, Exit EV - (Debt_N - Cash_N))          (limited liability)
 MOIC           = Exit equity / Sponsor equity
 IRR            = r such that  -Sponsor equity + Exit equity / (1 + r)^N = 0
 ```
 
 IRR is solved numerically by bisection (and checked against `numpy_financial.irr` in the tests). With no interim dividends, IRR = MOIC^(1/N) - 1.
+
+**Limited liability:** if the exit EV is below net debt, the lenders absorb the shortfall and the sponsor loses its equity cheque, but never more. Exit equity is floored at zero, and a total loss is reported as MOIC 0.00x and IRR -100% (by convention, since the IRR equation has no finite solution when nothing comes back).
 
 ### 5. Value creation bridge
 
@@ -257,9 +258,10 @@ Multiple expansion  = (multiple_N - multiple_0) x EBITDA_N
 Debt paydown        = Debt_0 - Debt_N
 Cash generation     = Cash_N - Cash_0
 Transaction fees    = -Fees
+Limited liability   = Exit equity - (EV_N - NetDebt_N)            (0 unless equity is wiped out)
 ```
 
-EBITDA growth is valued at the **entry** multiple and multiple expansion on **exit** EBITDA, so the interaction term (more EBITDA x higher multiple) is attributed to the multiple. Other orderings are possible and would shift value between the bars; the total is identical. The components sum exactly to the equity gain, which is checked by the tests.
+EBITDA growth is valued at the **entry** multiple and multiple expansion on **exit** EBITDA, so the interaction term (more EBITDA x higher multiple) is attributed to the multiple. Other orderings are possible and would shift value between the bars; the total is identical. The components sum exactly to the equity gain, which is checked by the tests. The limited-liability bar only appears in a wiped-out deal: it is the part of the loss borne by the lenders, which keeps the bridge exact when exit equity is floored at zero. The "% of gain" column is shown only when the total gain is positive; for a loss it reads n/a, because dividing by a negative total would flip the signs of every driver.
 
 ### 6. Sensitivity
 
@@ -330,6 +332,8 @@ The finance logic (`transaction`, `projection`, `debt`, `returns`, `bridge`) is 
 - debt is never negative, balances roll forward, the sweep respects seniority
 - cash reconciles every year (beginning cash + levered FCF - repayments = ending cash)
 - IRR matches `numpy_financial.irr`
+- a wiped-out deal returns MOIC 0.00x and IRR -100% (exit equity floored at zero)
+- the example-case headline numbers shown above (golden regression test)
 - bridge components sum to the total equity gain
 - the centre cell of the sensitivity grid equals the base-case IRR
 
