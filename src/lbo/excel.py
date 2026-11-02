@@ -46,6 +46,8 @@ HIGHLIGHT_FILL = PatternFill("solid", fgColor="FFF2CC")
 MONEY = '#,##0.0_);(#,##0.0);"-"_)'
 PCT = '0.0%_);(0.0%);"-"_)'
 MULT = '0.00"x"_);(0.00"x");"-"_)'
+# MOIC keeps an explicit zero: a total loss must read 0.00x, not "-".
+MOIC = '0.00"x"_);(0.00"x");0.00"x"_)'
 INTEGER = "0_)"
 
 LABEL_WIDTH = 36
@@ -420,7 +422,7 @@ def _returns_sheet(wb: Workbook, result: LBOResult, subtitle: str) -> None:
     r += 1
     _row(ws, r, "Exit equity value", [ret.exit_equity], MONEY)
     r += 1
-    _row(ws, r, "MOIC", [ret.moic], MULT, font=BOLD_FONT)
+    _row(ws, r, "MOIC", [ret.moic], MOIC, font=BOLD_FONT)
     r += 1
     _row(ws, r, f"IRR ({ret.holding_period_years}-year hold)", [ret.irr], PCT, font=BOLD_FONT)
 
@@ -546,7 +548,7 @@ def _sensitivity_sheet(wb: Workbook, result: LBOResult, subtitle: str) -> None:
     )  # fmt: skip
     end = _grid(
         ws, end + 2, "MOIC: entry (rows) / exit (cols)", s.entry_multiples, s.exit_multiples,
-        s.moic, MULT,
+        s.moic, MOIC,
     )  # fmt: skip
     _note(ws, end + 2, "Highlighted cell = base case. Debt quantum is held at x EBITDA, so a")
     _note(ws, end + 3, "higher entry multiple is funded entirely with additional equity.")
