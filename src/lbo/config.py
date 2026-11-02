@@ -112,8 +112,11 @@ class Tranche(_Strict):
 
 class Debt(_Strict):
     tranches: list[Tranche] = Field(min_length=1)
-    # Share of excess cash flow (above minimum cash) used each year to prepay
-    # sweepable tranches in seniority order. 0 = no sweep, 1 = full sweep.
+    # Share of the cash balance above minimum cash (after interest and mandatory
+    # amortisation, INCLUDING cash retained in earlier years) used each year to
+    # prepay sweepable tranches in seniority order. 0 = no sweep, 1 = full sweep.
+    # Note: this is a balance-based sweep, not a credit-agreement "excess cash
+    # flow" sweep on the year's flow only; see debt.py and the README.
     cash_sweep_pct: float = Field(default=0.0, ge=0, le=1)
 
     @field_validator("tranches")

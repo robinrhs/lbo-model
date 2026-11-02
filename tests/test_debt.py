@@ -133,3 +133,18 @@ def test_liquidity_shortfall_raises(tiny_deal_dict):
     tiny_deal_dict["debt"]["tranches"][0]["mandatory_amortization_pct"] = 1.0
     with pytest.raises(LiquidityError, match="Year 1"):
         run_deal(parse_config(tiny_deal_dict))
+
+
+def test_sweep_is_balance_based(example_config):
+    # Documented convention: the sweep applies to the whole cash balance above
+    # minimum cash (incl. cash retained in earlier years), not only the year's flow.
+    result = run_deal(example_config)
+    pct = example_config.debt.cash_sweep_pct
+    minimum = example_config.entry.minimum_cash
+    for y in result.schedule:
+        cash_above_min = y.beginning_cash + y.levered_fcf - y.mandatory_repayment - minimum
+        assert y.excess_cash == pytest.approx(max(0.0, cash_above_min))
+        assert y.sweep_repayment == pytest.approx(pct * y.excess_cash)
+    # From year 2 on, retained cash is swept again: more than pct x this year's flow.
+    y2 = result.schedule[1]
+    assert y2.sweep_repayment > pct * (y2.levered_fcf - y2.mandatory_repayment)

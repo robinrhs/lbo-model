@@ -40,7 +40,8 @@ debt:
       interest_rate: 0.105
       mandatory_amortization_pct: 0.0    # bullet repayment at maturity
       sweep: false                       # non-call during the holding period
-  cash_sweep_pct: 0.50          # 50% of excess cash prepays senior debt
+  cash_sweep_pct: 0.50          # 50% of cash above minimum (incl. cash retained in
+                                # earlier years) prepays senior debt each year
 
 sensitivity:
   entry_multiple_step: 0.5

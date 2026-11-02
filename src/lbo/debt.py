@@ -10,8 +10,8 @@ Each year the model walks down the same waterfall:
   - Cash interest         = sum over tranches of (rate x BEGINNING balance)
   = Cash available for debt repayment ("levered FCF")
   - Mandatory amortisation (each tranche: % of original principal, capped at balance)
-  - Cash sweep            = sweep % x (cash above minimum cash), paid to sweepable
-                            tranches in seniority order
+  - Cash sweep            = sweep % x (cash BALANCE above minimum cash), paid to
+                            sweepable tranches in seniority order
   = Change in cash
 
 Conventions (deliberate simplifications, see README):
@@ -22,6 +22,12 @@ Conventions (deliberate simplifications, see README):
   EBIT minus interest. The shield is therefore already inside "cash taxes";
   it is reported separately for transparency but never subtracted twice.
   Losses are not carried forward (taxes are floored at zero).
+* The sweep is BALANCE-based: it applies to all cash above the minimum,
+  including cash retained in earlier years. Cash not swept this year is
+  therefore partly swept again next year, so over the hold more than
+  sweep % of the cumulative excess cash goes to the lenders. Credit
+  agreements usually define the sweep on the year's "excess cash flow"
+  only; with a 100% sweep both definitions give the same result.
 * No interest income on cash, no revolver, no PIK interest.
 """
 
@@ -158,8 +164,9 @@ def build_debt_schedule(
                 "amortisation."
             )
 
-        # 5) Cash sweep: a share of the cash above the minimum balance prepays
-        #    debt, senior first. The rest stays on the balance sheet.
+        # 5) Cash sweep: a share of the cash BALANCE above the minimum (incl.
+        #    cash kept from earlier years) prepays debt, senior first. The
+        #    rest stays on the balance sheet.
         excess_cash = max(0.0, cash_after_mandatory - minimum_cash)
         balances_after_mandatory = [b - m for b, m in zip(balances, mandatory, strict=True)]
         sweep = allocate_sweep(

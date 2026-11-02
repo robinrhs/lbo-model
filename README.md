@@ -232,6 +232,7 @@ Cash_t            = Cash_{t-1} + Levered FCF_t - sum_i (Mandatory_{i,t} + Sweep_
 ```
 
 - **Interest convention:** interest is charged on the **beginning-of-year** balance. This avoids the circular reference that average-balance interest creates (interest → cash flow → repayment → balance → interest). It slightly overstates interest in years with large repayments.
+- **Cash sweep convention:** the sweep applies to the cash **balance** above minimum cash, including cash retained in earlier years. Cash that is not swept in one year is partly swept again in the next, so over the hold the lenders receive more than 50% of the cumulative excess cash. Credit agreements usually define an *excess cash flow* sweep on the year's flow only; with a 100% sweep the two definitions coincide. The choice affects only the split between debt paydown and cash build-up (and therefore interest), not net debt at the time of each sweep.
 - **Interest tax shield:** interest is deducted before tax, so the shield (`tax rate x interest`, as long as pre-tax income is positive) is **already inside cash taxes**. The Debt Schedule sheet shows it as a memo line; it is never subtracted a second time.
 
 ### 4. Exit and returns
@@ -277,7 +278,7 @@ The full model is re-run for every combination of entry multiple (rows) and exit
 | Tax rate | 30% | roughly German corporate + trade tax |
 | Senior Term Loan | 3.0x, 7.0%, 5% amortisation p.a., sweepable | |
 | Subordinated Notes | 1.5x, 10.5%, bullet, non-call | |
-| Cash sweep | 50% of excess cash | |
+| Cash sweep | 50% of cash above minimum | balance-based, see method |
 | Fees / minimum cash | 2.5% of EV / 10.0 | |
 
 ## Limitations

@@ -190,7 +190,14 @@ def _assumptions_sheet(wb: Workbook, result: LBOResult, subtitle: str) -> None:
         ws.cell(row=r, column=5, value="Yes" if tranche.sweep else "No").font = INPUT_FONT
         ws.cell(row=r, column=5).alignment = Alignment(horizontal="right")
     r += 1
-    _row(ws, r, "Cash sweep (% of excess cash)", [cfg.debt.cash_sweep_pct], PCT, font=INPUT_FONT)
+    _row(
+        ws,
+        r,
+        "Cash sweep (% of cash above minimum)",
+        [cfg.debt.cash_sweep_pct],
+        PCT,
+        font=INPUT_FONT,
+    )
 
     r += 2
     _note(ws, r, "Blue font = hard-coded input. Black font = calculated by the Python model.")
