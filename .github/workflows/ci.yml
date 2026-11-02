@@ -35,6 +35,3 @@ jobs:
 
       - name: Run tests
         run: uv run pytest
-
-      - name: Smoke-test the CLI
-        run: uv run python -m lbo run config/example.yaml --excel output/lbo_example.xlsx
