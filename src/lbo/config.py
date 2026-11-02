@@ -116,6 +116,14 @@ class Debt(_Strict):
     # sweepable tranches in seniority order. 0 = no sweep, 1 = full sweep.
     cash_sweep_pct: float = Field(default=0.0, ge=0, le=1)
 
+    @field_validator("tranches")
+    @classmethod
+    def _unique_names(cls, tranches: list[Tranche]) -> list[Tranche]:
+        names = [t.name for t in tranches]
+        if len(set(names)) != len(names):
+            raise ValueError(f"tranche names must be unique, got {names}")
+        return tranches
+
 
 class Sensitivity(_Strict):
     # Grid around the base case: centre +/- `steps` x `step` turns of EBITDA.
@@ -175,7 +183,7 @@ class DealConfig(_Strict):
         data = self.model_dump()
         data["entry"]["entry_multiple"] = entry_multiple
         data["exit"]["exit_multiple"] = exit_multiple
-        return DealConfig.model_validate(data)
+        return parse_config(data)
 
 
 def _per_year(value: float | list[float], years: int) -> list[float]:
