@@ -28,6 +28,13 @@ Deleveraging = reduction in net debt (debt repaid + cash built up), i.e. the
 free cash flow that accrued to equity holders. Transaction fees are value that
 leaves the deal at closing and are shown as a separate negative bar so the
 components sum exactly to the total gain.
+
+Limited liability: exit equity is floored at zero (see returns.py). In a
+wiped-out deal, the identity above would give a NEGATIVE exit equity, i.e. a
+loss larger than the cheque. The part of the loss that the lenders absorb
+instead of the sponsor is shown as a separate "limited liability" bar
+(= floored exit equity - unfloored exit equity >= 0). It is zero in every deal
+where equity is still in the money, so the bridge always sums exactly.
 """
 
 from __future__ import annotations
@@ -45,6 +52,7 @@ class ValueBridge:
     debt_paydown: float
     cash_generation: float
     transaction_fees: float  # negative number (value leakage)
+    limited_liability: float = 0.0  # >= 0; loss absorbed by lenders in a wipe-out
 
     @property
     def ebitda_growth(self) -> float:
@@ -62,7 +70,11 @@ class ValueBridge:
     @property
     def sum_of_components(self) -> float:
         return (
-            self.ebitda_growth + self.multiple_expansion + self.deleveraging + self.transaction_fees
+            self.ebitda_growth
+            + self.multiple_expansion
+            + self.deleveraging
+            + self.transaction_fees
+            + self.limited_liability
         )
 
 
@@ -92,6 +104,11 @@ def build_value_bridge(
     # Change in multiple, applied to EXIT EBITDA.
     multiple_expansion = (exit_multiple - entry_multiple) * exit_ebitda
 
+    # Exit equity before the zero floor; the gap to the actual (floored) exit
+    # equity is the loss the sponsor does not bear thanks to limited liability.
+    unfloored_exit_equity = exit_multiple * exit_ebitda - (exit_debt - exit_cash)
+    limited_liability = exit_equity - unfloored_exit_equity
+
     return ValueBridge(
         entry_equity=entry_equity,
         exit_equity=exit_equity,
@@ -101,4 +118,5 @@ def build_value_bridge(
         debt_paydown=entry_debt - exit_debt,
         cash_generation=exit_cash - entry_cash,
         transaction_fees=-transaction_fees,
+        limited_liability=limited_liability,
     )

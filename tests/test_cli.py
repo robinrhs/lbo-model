@@ -23,3 +23,14 @@ def test_cli_reports_config_errors(tmp_path, capsys):
     bad.write_text("entry: {ltm_revenue: -1}\n", encoding="utf-8")
     assert main(["run", str(bad)]) == 1
     assert "Invalid deal assumptions" in capsys.readouterr().out
+
+
+def test_cli_handles_total_loss(tmp_path, capsys):
+    text = EXAMPLE.read_text(encoding="utf-8").replace("exit_multiple: 10.0", "exit_multiple: 1.0")
+    wiped = tmp_path / "wiped.yaml"
+    wiped.write_text(text, encoding="utf-8")
+    assert main(["run", str(wiped), "--excel", str(tmp_path / "wiped.xlsx")]) == 0
+    out = capsys.readouterr().out
+    assert "0.00x" in out
+    assert "-100.0%" in out
+    assert "equity wiped out" in out

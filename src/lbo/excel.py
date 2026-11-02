@@ -385,6 +385,16 @@ def _returns_sheet(wb: Workbook, result: LBOResult, subtitle: str) -> None:
         ("Plus: cash at exit", ret.exit_cash, MONEY, CALC_FONT, None),
         ("Exit equity value", ret.exit_equity, MONEY, BOLD_FONT, TOTAL_BORDER),
     ]
+    if ret.is_total_loss:
+        # Keep the column adding up: the shortfall is borne by lenders, not equity.
+        floor = (
+            "Plus: shortfall borne by lenders (limited liability)",
+            ret.exit_equity - ret.equity_value_before_floor,
+            MONEY,
+            CALC_FONT,
+            None,
+        )
+        exit_rows.insert(len(exit_rows) - 1, floor)
     for label, value, fmt, font, border in exit_rows:
         r += 1
         _row(ws, r, label, [value], fmt, font=font, border=border)
@@ -408,6 +418,12 @@ def _returns_sheet(wb: Workbook, result: LBOResult, subtitle: str) -> None:
 
     r += 2
     _note(ws, r, "IRR solves NPV(equity cash flows) = 0. No interim dividends are assumed.")
+    _note(
+        ws,
+        r + 1,
+        "Exit equity is floored at zero (limited liability); a total loss shows MOIC 0.00x "
+        "and IRR -100%.",
+    )
     _widths(ws, len(flows))
     ws.freeze_panes = ws.cell(row=HEADER_ROW + 1, column=2)
 
@@ -429,6 +445,8 @@ def _bridge_sheet(wb: Workbook, result: LBOResult, subtitle: str) -> None:
         ("Cash generation", b.cash_generation),
         ("Transaction fees", b.transaction_fees),
     ]
+    if b.limited_liability:  # only in a wipe-out: loss borne by lenders, not the sponsor
+        components.append(("Limited liability (loss absorbed by lenders)", b.limited_liability))
     for label, value in components:
         r += 1
         _row(ws, r, label, [value], MONEY, indent=1)
@@ -444,6 +462,8 @@ def _bridge_sheet(wb: Workbook, result: LBOResult, subtitle: str) -> None:
         ("Deleveraging (net debt reduction)", b.deleveraging),
         ("Transaction fees", b.transaction_fees),
     ]
+    if b.limited_liability:
+        summary.append(("Limited liability (loss absorbed by lenders)", b.limited_liability))
     for label, value in summary:
         r += 1
         _row(ws, r, label, [value], MONEY, indent=1)

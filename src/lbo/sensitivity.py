@@ -5,8 +5,10 @@ multiple (columns); everything else is unchanged. Debt is sized on EBITDA, so a
 higher entry multiple means a higher price funded entirely with more equity,
 which lowers returns. The centre cell is the base case by construction.
 
-A cell is empty (None) when that combination is not a valid deal, e.g. when a
-very low entry multiple would make debt exceed the purchase price.
+A cell is empty (None) only when that combination is not a valid deal, e.g.
+when a very low entry multiple would make debt exceed the purchase price. A
+valid deal in which the equity is wiped out at exit is NOT empty: it shows
+MOIC 0.00x and IRR -100%.
 """
 
 from __future__ import annotations
@@ -44,7 +46,7 @@ def build_sensitivity(config: DealConfig) -> SensitivityTable:
             try:
                 case = config.with_multiples(entry_multiple, exit_multiple)
                 result = run_deal(case).returns
-            except (ConfigError, ValueError):
+            except ConfigError:
                 irr_row.append(None)
                 moic_row.append(None)
                 continue

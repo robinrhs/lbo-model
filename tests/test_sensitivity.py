@@ -35,3 +35,13 @@ def test_invalid_cells_are_none(tiny_deal_dict, tiny_config):
     assert table.entry_multiples[0] == pytest.approx(2.0)
     assert all(cell is None for cell in table.irr[0])
     assert table.irr[2][2] == pytest.approx(run_deal(tiny_config).returns.irr)
+
+
+def test_wiped_out_cells_show_total_loss_not_none(example_config):
+    # Exit multiples of 1.0x-3.0x: the 1.0x column wipes out the equity.
+    case = example_config.with_multiples(example_config.entry.entry_multiple, 2.0)
+    table = build_sensitivity(case)
+    assert table.exit_multiples[0] == pytest.approx(1.0)
+    for row_irr, row_moic in zip(table.irr, table.moic, strict=True):
+        assert row_irr[0] == -1.0
+        assert row_moic[0] == 0.0

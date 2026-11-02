@@ -108,6 +108,10 @@ def returns_table(result: LBOResult, currency: str) -> Table:
     t.add_section()
     t.add_row("MOIC", _mult(r.moic))
     t.add_row(f"IRR ({r.holding_period_years}-year hold)", _pct(r.irr))
+    if r.is_total_loss:
+        t.add_section()
+        t.add_row("Total loss", "equity wiped out")
+        t.add_row("Exit EV - net debt", _money(r.equity_value_before_floor))
     return t
 
 
@@ -123,6 +127,8 @@ def bridge_table(result: LBOResult, currency: str) -> Table:
         ("Cash generation", b.cash_generation),
         ("Transaction fees", b.transaction_fees),
     ]
+    if b.limited_liability:  # only in a wipe-out: loss borne by lenders, not the sponsor
+        rows.append(("Limited liability (loss absorbed by lenders)", b.limited_liability))
     for label, value in rows:
         t.add_row(label, _money(value), _pct(value / gain) if gain else "n/a")
     t.add_section()
@@ -180,6 +186,10 @@ def main(argv: list[str] | None = None) -> int:
         result = run_model(config)
     except (ConfigError, LiquidityError) as err:
         console.print(f"[red]{err}[/red]")
+        return 1
+    except ValueError as err:
+        # Last line of defence: show a readable message instead of a traceback.
+        console.print(f"[red]Model could not be computed: {err}[/red]")
         return 1
 
     print_summary(result, console)
