@@ -11,6 +11,7 @@ from rich.table import Table
 
 from lbo.config import ConfigError, load_config
 from lbo.debt import LiquidityError
+from lbo.excel import export_workbook
 from lbo.model import LBOResult, run_model
 
 
@@ -184,8 +185,6 @@ def main(argv: list[str] | None = None) -> int:
     print_summary(result, console)
 
     if args.excel:
-        from lbo.excel import export_workbook
-
         path = export_workbook(result, args.excel)
         console.print(f"Excel workbook written to [bold]{path}[/bold]")
     return 0
