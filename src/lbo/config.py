@@ -23,8 +23,12 @@ class ConfigError(ValueError):
 
 class _Strict(BaseModel):
     # Unknown keys are rejected so that a typo like "exit_multple" is caught
-    # instead of being silently ignored.
-    model_config = ConfigDict(extra="forbid", frozen=True)
+    # instead of being silently ignored. NaN and infinity are rejected (a bound
+    # like ge=0 alone would let +inf through). Strict mode stops silent type
+    # coercion: "yes" is not a bool, "40" or true is not a number, 5.0 is not
+    # a whole number of years. Integers are still accepted where a float is
+    # expected (40 means 40.0).
+    model_config = ConfigDict(extra="forbid", frozen=True, allow_inf_nan=False, strict=True)
 
 
 class Company(_Strict):

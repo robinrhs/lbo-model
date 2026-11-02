@@ -16,7 +16,7 @@ Spreadsheet LBOs are the standard tool in private equity, but their logic is spr
 
 What it does:
 
-- reads and validates all assumptions from one YAML file (clear error messages for typos or implausible inputs)
+- reads and validates all assumptions from one YAML file (clear error messages for typos, wrong types, non-finite values such as `.inf`, or implausible inputs)
 - builds sources & uses, including transaction fees and minimum cash
 - projects revenue, EBITDA, D&A, capex and working capital
 - runs a cash flow waterfall and a per-tranche debt schedule: interest, mandatory amortisation, then a cash sweep in seniority order
