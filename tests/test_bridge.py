@@ -34,3 +34,15 @@ def test_bridge_sums_with_multiple_contraction_and_margin_changes(
 def test_no_multiple_expansion_when_exit_equals_entry(example_config):
     assert example_config.exit.exit_multiple == example_config.entry.entry_multiple
     assert run_deal(example_config).bridge.multiple_expansion == pytest.approx(0.0)
+
+
+def test_share_of_gain_only_for_positive_gain(example_config):
+    b = run_deal(example_config).bridge
+    assert b.share_of_gain(b.total_gain) == pytest.approx(1.0)
+    assert b.share_of_gain(b.revenue_growth) > 0
+
+    losing = run_deal(example_config.with_multiples(10.0, 2.0)).bridge
+    assert losing.total_gain < 0
+    # Dividing by a loss would flip signs, so no share is reported.
+    assert losing.share_of_gain(losing.revenue_growth) is None
+    assert losing.share_of_gain(losing.total_gain) is None

@@ -130,9 +130,12 @@ def bridge_table(result: LBOResult, currency: str) -> Table:
     if b.limited_liability:  # only in a wipe-out: loss borne by lenders, not the sponsor
         rows.append(("Limited liability (loss absorbed by lenders)", b.limited_liability))
     for label, value in rows:
-        t.add_row(label, _money(value), _pct(value / gain) if gain else "n/a")
+        t.add_row(label, _money(value), _pct(b.share_of_gain(value)))
     t.add_section()
-    t.add_row("Total equity gain", _money(gain), _pct(1.0) if gain else "n/a")
+    t.add_row("Total equity gain", _money(gain), _pct(b.share_of_gain(gain)))
+    if gain <= 0:
+        t.caption = "% of gain: n/a when the deal loses money"
+        t.caption_justify = "left"
     return t
 
 

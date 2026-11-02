@@ -67,6 +67,14 @@ class ValueBridge:
     def total_gain(self) -> float:
         return self.exit_equity - self.entry_equity
 
+    def share_of_gain(self, component: float) -> float | None:
+        """Component as % of the total gain, or None when there is no gain.
+
+        Shares only make sense for a positive gain: dividing by a loss would
+        flip the signs (value-creating drivers would show negative %).
+        """
+        return component / self.total_gain if self.total_gain > 0 else None
+
     @property
     def sum_of_components(self) -> float:
         return (

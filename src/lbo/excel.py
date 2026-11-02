@@ -20,6 +20,7 @@ from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.worksheet import Worksheet
 
+from lbo.bridge import ValueBridge
 from lbo.model import LBOResult
 
 # --- styles ----------------------------------------------------------------------
@@ -428,6 +429,11 @@ def _returns_sheet(wb: Workbook, result: LBOResult, subtitle: str) -> None:
     ws.freeze_panes = ws.cell(row=HEADER_ROW + 1, column=2)
 
 
+def _share(bridge: ValueBridge, value: float) -> float | str:
+    share = bridge.share_of_gain(value)
+    return "n/a" if share is None else share
+
+
 def _bridge_sheet(wb: Workbook, result: LBOResult, subtitle: str) -> None:
     cfg = result.base.config
     b = result.base.bridge
@@ -450,7 +456,7 @@ def _bridge_sheet(wb: Workbook, result: LBOResult, subtitle: str) -> None:
     for label, value in components:
         r += 1
         _row(ws, r, label, [value], MONEY, indent=1)
-        _row(ws, r, label, [value / gain if gain else None], PCT, start_col=3, indent=1)
+        _row(ws, r, label, [_share(b, value)], PCT, start_col=3, indent=1)
     r += 1
     _row(ws, r, "Exit equity", [b.exit_equity], MONEY, font=BOLD_FONT, border=TOTAL_BORDER)
 
@@ -467,10 +473,19 @@ def _bridge_sheet(wb: Workbook, result: LBOResult, subtitle: str) -> None:
     for label, value in summary:
         r += 1
         _row(ws, r, label, [value], MONEY, indent=1)
-        _row(ws, r, label, [value / gain if gain else None], PCT, start_col=3, indent=1)
+        _row(ws, r, label, [_share(b, value)], PCT, start_col=3, indent=1)
     r += 1
     _row(ws, r, "Total equity gain", [gain], MONEY, font=BOLD_FONT, border=TOTAL_BORDER)
-    _row(ws, r, "Total equity gain", [1.0], PCT, font=BOLD_FONT, border=TOTAL_BORDER, start_col=3)
+    _row(
+        ws,
+        r,
+        "Total equity gain",
+        [_share(b, gain)],
+        PCT,
+        font=BOLD_FONT,
+        border=TOTAL_BORDER,
+        start_col=3,
+    )
 
     r += 2
     notes = [
@@ -478,6 +493,7 @@ def _bridge_sheet(wb: Workbook, result: LBOResult, subtitle: str) -> None:
         "multiple expansion is applied to EXIT EBITDA; within EBITDA growth, revenue",
         "growth uses the entry margin and margin expansion uses exit revenue.",
         "Components sum exactly to exit equity less entry equity.",
+        "% of gain is shown only when the total gain is positive (n/a for a loss).",
     ]
     for i, text in enumerate(notes):
         _note(ws, r + i, text)

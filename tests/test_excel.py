@@ -68,3 +68,11 @@ def test_sources_and_uses_totals(workbook):
     assert _find_row(ws, "Total uses")[1].value == pytest.approx(
         _find_row(ws, "Total sources")[1].value
     )
+
+
+def test_bridge_shares_are_na_for_a_loss(example_config, tmp_path):
+    result = run_model(example_config.with_multiples(10.0, 2.0))
+    wb = load_workbook(export_workbook(result, tmp_path / "loss.xlsx"))
+    row = _find_row(wb["Bridge"], "Revenue growth")
+    assert row[1].value > 0
+    assert row[2].value == "n/a"
