@@ -243,7 +243,7 @@ MOIC           = Exit equity / Sponsor equity
 IRR            = r such that  -Sponsor equity + Exit equity / (1 + r)^N = 0
 ```
 
-IRR is solved numerically by bisection (and checked against `numpy_financial.irr` in the tests). With no interim dividends, IRR = MOIC^(1/N) - 1.
+IRR is solved numerically by bisection (and checked against `numpy_financial.irr` in the tests). The search starts on [-99%, +1000%] and widens automatically when the answer lies outside, so near-total losses and extreme winners are solved too. With no interim dividends, IRR = MOIC^(1/N) - 1.
 
 **Limited liability:** if the exit EV is below net debt, the lenders absorb the shortfall and the sponsor loses its equity cheque, but never more. Exit equity is floored at zero, and a total loss is reported as MOIC 0.00x and IRR -100% (by convention, since the IRR equation has no finite solution when nothing comes back).
 

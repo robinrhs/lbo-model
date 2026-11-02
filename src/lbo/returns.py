@@ -57,6 +57,16 @@ def npv(rate: float, cash_flows: Sequence[float]) -> float:
     return sum(cf / (1 + rate) ** t for t, cf in enumerate(cash_flows))
 
 
+class IRRError(ValueError):
+    """Raised when no IRR can be found for a set of cash flows."""
+
+
+# Search limits for the IRR solver. -100% itself is excluded because NPV is not
+# defined there (division by zero); +1,000,000% is far beyond any real deal.
+IRR_LOWEST = -1 + 1e-12
+IRR_HIGHEST = 1e4
+
+
 def irr(cash_flows: Sequence[float], low: float = -0.99, high: float = 10.0) -> float:
     """Internal rate of return via bisection.
 
@@ -64,14 +74,27 @@ def irr(cash_flows: Sequence[float], low: float = -0.99, high: float = 10.0) -> 
     to a wrong root: it keeps halving the interval [low, high] in which the NPV
     changes sign until the interval is tiny. Requires a conventional cash flow
     pattern (money out first, money back later).
+
+    [low, high] is only the starting guess. If the NPV has the same sign at both
+    ends, the interval is widened step by step (low towards -100%, high
+    upwards) until it brackets the root, so a near-total loss (IRR below -99%)
+    or a spectacular deal (IRR above 1000%) is still solved.
     """
+    if not (any(cf < 0 for cf in cash_flows) and any(cf > 0 for cf in cash_flows)):
+        raise IRRError("IRR not defined: cash flows need at least one sign change")
     npv_low, npv_high = npv(low, cash_flows), npv(high, cash_flows)
+    while npv_low * npv_high > 0 and (low > IRR_LOWEST or high < IRR_HIGHEST):
+        # Move each end a big step outwards: low halves its distance to -100%
+        # ten times over, high doubles (both clamped to the search limits).
+        low = max(IRR_LOWEST, -1 + (1 + low) / 1024)
+        high = min(IRR_HIGHEST, 2 * high)
+        npv_low, npv_high = npv(low, cash_flows), npv(high, cash_flows)
     if npv_low * npv_high > 0:
-        raise ValueError("IRR not bracketed: cash flows need at least one sign change")
-    for _ in range(200):
+        raise IRRError(f"IRR outside the solver range ({IRR_LOWEST:.10%} to {IRR_HIGHEST:,.0%})")
+    for _ in range(300):
         mid = (low + high) / 2
         npv_mid = npv(mid, cash_flows)
-        if abs(npv_mid) < 1e-12 or (high - low) / 2 < 1e-12:
+        if npv_mid == 0 or (high - low) / 2 < 1e-12:
             return mid
         if npv_low * npv_mid < 0:
             high = mid

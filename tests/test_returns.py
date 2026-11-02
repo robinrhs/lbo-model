@@ -3,8 +3,9 @@ from __future__ import annotations
 import numpy_financial as npf
 import pytest
 
+from lbo.config import parse_config
 from lbo.deal import run_deal
-from lbo.returns import compute_returns, irr, moic, npv
+from lbo.returns import IRRError, compute_returns, irr, moic, npv
 
 
 def test_irr_matches_numpy_financial_known_case():
@@ -30,8 +31,59 @@ def test_npv_at_irr_is_zero():
 
 
 def test_irr_requires_sign_change():
-    with pytest.raises(ValueError):
+    with pytest.raises(IRRError, match="sign change"):
         irr([100.0, 10.0])
+    with pytest.raises(IRRError, match="sign change"):
+        irr([-100.0, 0.0])
+
+
+# --- IRR outside the solver's starting interval [-99%, +1000%] ----------------
+
+
+@pytest.mark.parametrize(
+    ("flows", "expected"),
+    [
+        # -100 + 0.5 / (1 + r) = 0  ->  1 + r = 0.005  ->  r = -99.5%
+        ([-100.0, 0.5], -0.995),
+        # -100 + 0.0001 / (1 + r)^2 = 0  ->  1 + r = 0.001  ->  r = -99.9%
+        ([-100.0, 0.0, 0.0001], -0.999),
+        # -1 + 16 / (1 + r) = 0  ->  1 + r = 16  ->  r = 1500%
+        ([-1.0, 16.0], 15.0),
+        # -1 + 144 / (1 + r)^2 = 0  ->  1 + r = 12  ->  r = 1100%
+        ([-1.0, 0.0, 144.0], 11.0),
+    ],
+)
+def test_irr_outside_starting_interval(flows, expected):
+    assert irr(flows) == pytest.approx(expected, abs=1e-9)
+    assert irr(flows) == pytest.approx(npf.irr(flows), abs=1e-9)
+
+
+# Tiny deal (conftest.TINY_DEAL) held for one year only. Year 1 is unchanged
+# from tests/test_hand_case.py: EBITDA 22, debt 42.375, cash 5, so net debt at
+# exit = 37.375. Equity invested = 57.
+def _one_year_tiny(tiny_deal_dict, exit_multiple):
+    tiny_deal_dict["exit"] = {"holding_period_years": 1, "exit_multiple": exit_multiple}
+    return parse_config(tiny_deal_dict)
+
+
+def test_near_total_loss_deal_below_minus_99_percent(tiny_deal_dict):
+    # Exit 1.7x: EV = 22 x 1.7 = 37.4; equity = 37.4 - 37.375 = 0.025.
+    # MOIC = 0.025 / 57; one year, so IRR = MOIC - 1 = -99.956%.
+    r = run_deal(_one_year_tiny(tiny_deal_dict, 1.7)).returns
+    assert r.exit_equity == pytest.approx(0.025, abs=1e-9)
+    assert r.moic == pytest.approx(0.025 / 57, abs=1e-12)
+    assert r.irr == pytest.approx(0.025 / 57 - 1, abs=1e-9)
+    assert r.irr < -0.99
+
+
+def test_extreme_winner_deal_above_1000_percent(tiny_deal_dict):
+    # Exit 40x: EV = 880; equity = 880 - 37.375 = 842.625.
+    # MOIC = 842.625 / 57 = 14.7829; IRR = MOIC - 1 = 1378.3%.
+    r = run_deal(_one_year_tiny(tiny_deal_dict, 40.0)).returns
+    assert r.exit_equity == pytest.approx(842.625, abs=1e-9)
+    assert r.moic == pytest.approx(842.625 / 57, abs=1e-12)
+    assert r.irr == pytest.approx(842.625 / 57 - 1, abs=1e-9)
+    assert r.irr > 10.0
 
 
 def test_moic_and_exit_equity(example_config):

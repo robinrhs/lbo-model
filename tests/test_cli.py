@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import yaml
 from conftest import EXAMPLE
 
 from lbo.cli import main
@@ -34,3 +35,16 @@ def test_cli_handles_total_loss(tmp_path, capsys):
     assert "0.00x" in out
     assert "-100.0%" in out
     assert "equity wiped out" in out
+
+
+def test_cli_runs_deal_with_irr_below_minus_99_percent(tmp_path, capsys, tiny_deal_dict):
+    # One-year tiny deal exiting at 1.7x: IRR = 0.025 / 57 - 1 = -99.96%
+    # (see test_returns.py). This used to stop with "IRR not bracketed".
+    tiny_deal_dict["exit"] = {"holding_period_years": 1, "exit_multiple": 1.7}
+    path = tmp_path / "near_loss.yaml"
+    path.write_text(yaml.safe_dump(tiny_deal_dict), encoding="utf-8")
+    assert main(["run", str(path)]) == 0
+    out = capsys.readouterr().out
+    irr_line = next(line for line in out.splitlines() if "IRR (1-year hold)" in line)
+    assert "-100.0%" in irr_line  # -99.96% rounds to -100.0% at one decimal
+    assert "IRR not bracketed" not in out
